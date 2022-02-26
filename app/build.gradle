@@ -32,6 +32,6 @@ dependencies {
 
     implementation 'androidx.appcompat:appcompat:1.1.0'
 
-    implementation project(':permision')
+    implementation project(':permission')
     annotationProcessor project(':lib-compiler')
 }

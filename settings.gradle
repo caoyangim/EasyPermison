@@ -1,5 +1,5 @@
 rootProject.name = "EasyPermison"
 include ':app'
-include ':permision'
+include ':permission'
 include ':lib-compiler'
 include ':lib-annotation'
