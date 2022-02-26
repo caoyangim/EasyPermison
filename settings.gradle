@@ -1,0 +1,5 @@
+rootProject.name = "EasyPermison"
+include ':app'
+include ':permision'
+include ':lib-compiler'
+include ':lib-annotation'
