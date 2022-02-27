@@ -4,8 +4,8 @@
 
 # 引入依赖
 ``` groovy
-implementation 'com.github.caoyangim.EasyPermison:permision:v1.0.0'
-annotationProcessor 'com.github.caoyangim.EasyPermison:lib-compiler:v1.0.0'
+implementation 'com.github.caoyangim.EasyPermison:permision:v1.1.0'
+annotationProcessor 'com.github.caoyangim.EasyPermison:lib-compiler:v1.1.0'
 ```
 
 # 使用方法
