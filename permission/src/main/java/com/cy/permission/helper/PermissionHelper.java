@@ -4,8 +4,11 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,16 +16,23 @@ import java.util.List;
 public class PermissionHelper {
 
     private final static String SUFFIX = "$$PermissionProxy";
+    private static final String HIDE_FRAGMENT_TAG = "permission&$$HideFragment";
 
-    public static void requestPermission(final Activity activity, final int requestCode, final String... permission) {
+    private volatile static PermissionHelper helper;
+
+    private PermissionHelper() {
+    }
+
+    public static void requestPermission(final FragmentActivity activity, final int requestCode, final String... permission) {
         doRequestPermission(activity, permission, requestCode);
     }
 
+    /*hide*/
     public static void requestPermission(final Fragment fragment, final int requestCode, final String... permission) {
         doRequestPermission(fragment.getActivity(), permission, requestCode);
     }
 
-    private static void doRequestPermission(final Activity activity, final String[] permission, final int requestCode) {
+    private static void doRequestPermission(final FragmentActivity activity, final String[] permission, final int requestCode) {
         if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.M) {
             doExecuteGrant(activity, requestCode, permission);
             return;
@@ -34,12 +44,12 @@ public class PermissionHelper {
         _doRequestPermission(activity, permission, requestCode);
     }
 
-    private static void _doRequestPermission(final Activity activity, final String[] permission, final int requestCode) {
-
-        ActivityCompat.requestPermissions(activity, permission, requestCode);
+    private static void _doRequestPermission(final FragmentActivity activity, final String[] permission, final int requestCode) {
+        final FragmentManager fm = activity.getSupportFragmentManager();
+        get().fragmentGet(fm).requestPermissions(permission, requestCode);
     }
 
-    private static boolean shouldShowPermissionRational(final Activity activity, final int requestCode, final String[] permission) {
+    private static boolean shouldShowPermissionRational(final FragmentActivity activity, final int requestCode, final String[] permission) {
         final PermissionProxy proxy = findProxy(activity);
         final List<String> deniedPermissions = findDeniedPermissions(activity, permission);
         if (!deniedPermissions.isEmpty()) {
@@ -65,17 +75,17 @@ public class PermissionHelper {
         return denieds;
     }
 
-    private static void doExecuteGrant(final Activity activity, final int requestCode, final String[] permission) {
+    private static void doExecuteGrant(final FragmentActivity activity, final int requestCode, final String[] permission) {
         final PermissionProxy proxy = findProxy(activity);
         proxy.grant(requestCode, activity, permission);
     }
 
-    private static void doExecuteDenied(final Activity activity, final int requestCode, final String[] permission) {
+    private static void doExecuteDenied(final FragmentActivity activity, final int requestCode, final String[] permission) {
         final PermissionProxy proxy = findProxy(activity);
         proxy.denied(requestCode, activity, permission);
     }
 
-    private static PermissionProxy findProxy(final Activity activity) {
+    private static PermissionProxy findProxy(final FragmentActivity activity) {
         final Class<? extends Activity> aClass = activity.getClass();
         try {
             final Class<?> forName = Class.forName(aClass.getName() + SUFFIX);
@@ -92,7 +102,7 @@ public class PermissionHelper {
         throw new RuntimeException("找不到生成的类");
     }
 
-    public static void onRequestPermissionsResult(final Activity activity, final int requestCode, final String[] permissions, final int[] grantResults) {
+    private static void onRequestPermissionsResult(final FragmentActivity activity, final int requestCode, final String[] permissions, final int[] grantResults) {
         final List<String> grant = new ArrayList<>();
         final List<String> denied = new ArrayList<>();
         for (int i = 0; i < grantResults.length; i++) {
@@ -112,6 +122,34 @@ public class PermissionHelper {
             final String[] denieds = new String[denied.size()];
             denied.toArray(denieds);
             doExecuteDenied(activity, requestCode, denieds);
+        }
+    }
+
+    private static PermissionHelper get() {
+        if (helper == null) {
+            synchronized (PermissionHelper.class) {
+                if (helper == null) {
+                    helper = new PermissionHelper();
+                }
+            }
+        }
+        return helper;
+    }
+
+    private HideFragment fragmentGet(FragmentManager fm) {
+        HideFragment current = (HideFragment) fm.findFragmentByTag(HIDE_FRAGMENT_TAG);
+        if (current == null) {
+            current = new HideFragment();
+            fm.beginTransaction().add(current, HIDE_FRAGMENT_TAG).commitNow();
+        }
+        return current;
+    }
+
+    public static class HideFragment extends Fragment {
+
+        @Override
+        public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+            PermissionHelper.onRequestPermissionsResult(getActivity(), requestCode, permissions, grantResults);
         }
     }
 }

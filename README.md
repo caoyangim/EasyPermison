@@ -38,10 +38,4 @@ public void rational(final String[] permissions) {
         Toast.makeText(this, "我想获取该权限：" + deniedPermission, Toast.LENGTH_SHORT).show();
     }
 }
-
-@Override
-public void onRequestPermissionsResult(final int requestCode, @NonNull final String[] permissions, @NonNull final int[] grantResults) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    PermissionHelper.onRequestPermissionsResult(this, requestCode, permissions, grantResults);
-}
 ```
